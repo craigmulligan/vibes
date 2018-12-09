@@ -1,0 +1,18 @@
+{
+  "name": "navibrator",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "test": "jest test"
+  },
+  "dependencies": {
+    "@mapbox/mapbox-sdk": "^0.4.1",
+    "@turf/turf": "^5.1.6",
+    "events": "^3.0.0",
+    "mitt": "^1.1.3"
+  },
+  "devDependencies": {
+    "jest": "^23.6.0"
+  }
+}
