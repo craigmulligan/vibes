@@ -1,8 +1,9 @@
+require('dotenv').config()
 const fs = require('fs')
 const mbxDirections = require('@mapbox/mapbox-sdk/services/directions')
 
 const directionsClient = mbxDirections({
-  accessToken,
+  accessToken: process.env.MAPBOX_TOKEN,
 })
   ; (async () => {
     const config = {
@@ -10,15 +11,20 @@ const directionsClient = mbxDirections({
       steps: true,
       voiceUnits: 'metric',
       geometries: 'geojson',
-      overview: "false",
       waypoints: [
         {
           name: 'Start',
-          coordinates: [-0.052848, 51.53507],
+          coordinates: [
+            -118.506001,
+            34.022483
+          ]
         },
         {
           name: 'End',
-          coordinates: [-0.077387, 51.526756],
+          coordinates: [
+            -118.490471,
+            34.01714
+          ],
         },
       ],
     }
@@ -27,7 +33,7 @@ const directionsClient = mbxDirections({
       .getDirections(config)
       .send(config)
       .then(res => {
-        fs.writeFileSync('./director/res.json', JSON.stringify(res.body, null, 2))
+        fs.writeFileSync('./director/simple.res.json', JSON.stringify(res.body, null, 2))
       })
       .catch(console.log)
   })()

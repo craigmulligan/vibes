@@ -4,7 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "test": "node --test-reporter ./reporter.mjs --loader tsx --test **/*.test.ts"
+    "test": "node  --loader tsx --test **/*.test.ts"
   },
   "dependencies": {
     "@mapbox/mapbox-sdk": "^0.15.3",
@@ -16,6 +16,7 @@
     "@types/node": "^20.10.4",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
+    "dotenv": "^16.3.1",
     "eslint": "^8.42.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.0",

@@ -3,9 +3,9 @@ import {
   buffer,
   booleanPointInPolygon,
   distance as turfDistance,
-  nearestPointOnLine,
   LineString,
-  truncate,
+  Feature,
+  Polygon,
 } from "@turf/turf";
 import {
   DirectionsResponse,
@@ -13,7 +13,7 @@ import {
   Step,
 } from "@mapbox/mapbox-sdk/services/directions";
 
-type Location = [number, number];
+export type Location = [number, number];
 
 type Options = {
   leadDistance?: number;
@@ -22,12 +22,17 @@ type Options = {
 };
 
 class Director extends EventEmitter {
+  // Current users location
   location: Location;
-  prevSteps: string[];
+  currentStepIndex: number;
+  // Route is the full route geojson
   route: Route<LineString>;
-  stepRoute: LineString;
+  // step route is just the locations
+  steps: Step[];
   leadDistance: number;
-  buffedRoute: any;
+  // a buffer around the this.route
+  // which we check to see if user has hasDeviated.
+  buffedRoute: Feature<Polygon>;
 
   // this takes a mapbox direction response and emits the manuers based on the current location
   constructor(
@@ -41,17 +46,13 @@ class Director extends EventEmitter {
       ...{ leadDistance: 20, buffer: 50 },
     };
 
-    // steps that have already been sent to the client
-    this.prevSteps = [];
+    this.currentStepIndex = 0;
+
     // the distance when a step is primed/appropriate for the client
     this.leadDistance = opts.leadDistance;
     this.route = res.routes[0];
-    const locations = this.route.legs[0].steps.map(({ maneuver }) => {
-      return maneuver.location;
-    });
-    this.stepRoute = { type: "LineString" as const, coordinates: locations };
-
-    this.buffedRoute = buffer(this.stepRoute, opts.buffer, {
+    this.steps = this.route.legs[0].steps;
+    this.buffedRoute = buffer(this.route.geometry, opts.buffer, {
       units: "meters",
     });
     this.location = opts.location || res.waypoints[0].coordinates;
@@ -59,39 +60,6 @@ class Director extends EventEmitter {
 
   hasDeviated() {
     return booleanPointInPolygon(this.location, this.buffedRoute);
-  }
-
-  nextStep() {
-    const foundPoint = nearestPointOnLine(this.stepRoute, this.location);
-
-    if (!foundPoint.properties.index) {
-      throw new Error("could not find point on route");
-    }
-
-    const [lat, lng] = this.stepRoute.coordinates[foundPoint.properties.index];
-
-    const step = this.route.legs[0].steps.find(({ maneuver }) => {
-      console.log(maneuver.location);
-      return maneuver.location[0] === lat && maneuver.location[1] === lng;
-    });
-
-    if (!step) {
-      throw new Error("could not find next step");
-    }
-
-    return this.getStep(step);
-  }
-
-  getStep(step: Step): Step {
-    // if we have already notified the client it's not the next
-    if (!this.prevSteps.includes(step.name)) {
-      return step;
-    } else {
-      let current = this.route.legs[0].steps.findIndex(
-        (s) => s.name == step.name,
-      );
-      return this.getStep(this.route.legs[0].steps[current + 1]);
-    }
   }
 
   shouldNotify(step: Step) {
@@ -105,6 +73,15 @@ class Director extends EventEmitter {
     return false;
   }
 
+  #incrementStepIndex() {
+    if (this.currentStepIndex >= this.steps.length) {
+      return false;
+    }
+
+    this.currentStepIndex++;
+    return true;
+  }
+
   updateLocation(location: Location) {
     try {
       this.location = location;
@@ -112,11 +89,16 @@ class Director extends EventEmitter {
         this.emit("deviation");
       }
 
-      const step = this.nextStep();
-      console.log({ step });
+      // TODO should handle skipping steps
+      const step = this.steps[this.currentStepIndex];
 
       if (this.shouldNotify(step)) {
-        this.prevSteps.push(step.name);
+        console.log("should notify");
+        const isNextStep = this.#incrementStepIndex();
+        if (!isNextStep) {
+          this.emit("finished");
+        }
+
         this.emit("step", step);
       }
     } catch (err) {
