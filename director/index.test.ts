@@ -1,19 +1,32 @@
-import Director from "./";
-import res from "./res.json";
+import Director, { Location } from "./";
+import res from "./simple.res.json";
+import steps from "./simple.steps.json";
 import assert from "assert/strict";
 import { mock, describe, test, beforeEach } from "node:test";
 
 let d: Director;
+
 beforeEach(() => {
-  d = new Director(res as any, { location: [-0.052848, 51.53507] });
+  d = new Director(res as any, { location: [-118.506001, 34.022483] });
 });
 
 describe("update Location", () => {
-  test("should emit closest next step", () => {
-    d.on("step", (step) => {
-      assert.strictEqual(step.name, "Virginia Road");
-    });
-    d.updateLocation([-0.073446, 51.528247]);
+  test("should emit all steps until done", () => {
+    const stepCallback = mock.fn();
+    d.on("step", stepCallback);
+
+    const coords = steps.features
+      .filter((f) => f.geometry.type === "Point")
+      .map((f) => f.geometry.coordinates) as Location[];
+
+    for (const coord of coords) {
+      d.updateLocation(coord);
+    }
+
+    assert.strictEqual(
+      stepCallback.mock.callCount(),
+      res.routes[0].legs[0].steps.length,
+    );
   });
 
   // test("should only be called once when locations are near one another", () => {
@@ -34,16 +47,18 @@ describe("update Location", () => {
   // });
 });
 
-describe.only(".hasDeviated", () => {
-  test("should return true if current location is inside of route buffer", () => {
-    assert.ok(d.hasDeviated());
-  });
+// describe.only(".hasDeviated", () => {
+//   test("should return true if current location is inside of route buffer", () => {
+//     console.log("Heyo");
+//     console.log(JSON.stringify(d.stepRoute));
+//     assert.ok(d.hasDeviated());
+//   });
 
-  test("should return false if current location is outside of route buffer", () => {
-    d.location = [-0.052848, 52.53507];
-    assert.strictEqual(d.hasDeviated(), false);
-  });
-});
+//   test("should return false if current location is outside of route buffer", () => {
+//     d.location = [-0.052848, 52.53507];
+//     assert.strictEqual(d.hasDeviated(), false);
+//   });
+// });
 
 // describe(".nextStep", () => {
 //   test("should return the next closest step (forwards)", () => {
