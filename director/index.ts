@@ -1,5 +1,5 @@
 import EventEmitter from "events";
-import turf from "@turf/turf";
+import * as turf from "@turf/turf";
 import {
   DirectionsResponse,
   Route,
