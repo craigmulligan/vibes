@@ -6,7 +6,7 @@ import {
   LineString,
   Feature,
   Polygon,
-  length as turfLength,
+  nearestPointOnLine,
 } from "@turf/turf";
 import {
   DirectionsResponse,
@@ -88,9 +88,25 @@ class Director extends EventEmitter {
         buffer(step.geometry, this.options.buffer),
       );
 
-      // check if we have passed the manuever.
-
       if (isInStep) {
+        // check if we have already passed the manuever.
+        // this can happen if don't get a loc before the maneuver
+        // First get distance on line from manuever to end.
+        const maneuverPoint = nearestPointOnLine(
+          step.geometry,
+          step.maneuver.location,
+        );
+
+        const locationPoint = nearestPointOnLine(step.geometry, location);
+        if (
+          typeof locationPoint.properties.index === "number" &&
+          typeof maneuverPoint.properties.index === "number" &&
+          locationPoint.properties.index > maneuverPoint.properties.index
+        ) {
+          // we've passed the manuever
+          continue;
+        }
+
         return step;
       }
     }
@@ -106,8 +122,6 @@ class Director extends EventEmitter {
   }
 
   #notify(step: Step) {
-    this.currentStepIndex = this.steps.indexOf(step) + 1;
-    console.log("should notify", step.name);
     // const isNextStep = this.#incrementStepIndex();
     if (this.#isLastStep(step)) {
       console.log("finish");
@@ -115,6 +129,7 @@ class Director extends EventEmitter {
     }
 
     this.emit("step", step);
+    this.currentStepIndex = this.steps.indexOf(step) + 1;
   }
 
   updateLocation(location: Location) {
