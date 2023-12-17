@@ -6,6 +6,7 @@ import {
   LineString,
   Feature,
   Polygon,
+  length as turfLength,
 } from "@turf/turf";
 import {
   DirectionsResponse,
@@ -33,6 +34,10 @@ class Director extends EventEmitter {
   // a buffer around the this.route
   // which we check to see if user has hasDeviated.
   buffedRoute: Feature<Polygon>;
+  options: {
+    leadDistance: number;
+    buffer: number;
+  };
 
   // this takes a mapbox direction response and emits the manuers based on the current location
   constructor(
@@ -47,6 +52,7 @@ class Director extends EventEmitter {
     };
 
     this.currentStepIndex = 0;
+    this.options = opts;
 
     // the distance when a step is primed/appropriate for the client
     this.leadDistance = opts.leadDistance;
@@ -73,33 +79,57 @@ class Director extends EventEmitter {
     return false;
   }
 
-  #incrementStepIndex() {
-    if (this.currentStepIndex >= this.steps.length) {
-      return false;
+  #getNextStep(location: Location): Step | undefined {
+    const remainingSteps = this.steps.slice(this.currentStepIndex);
+
+    for (const step of remainingSteps) {
+      const isInStep = booleanPointInPolygon(
+        location,
+        buffer(step.geometry, this.options.buffer),
+      );
+
+      // check if we have passed the manuever.
+
+      if (isInStep) {
+        return step;
+      }
+    }
+  }
+
+  #isLastStep(step: Step) {
+    const index = this.steps.indexOf(step);
+    if (index === this.steps.length - 1) {
+      return true;
     }
 
-    this.currentStepIndex++;
-    return true;
+    return false;
+  }
+
+  #notify(step: Step) {
+    this.currentStepIndex = this.steps.indexOf(step) + 1;
+    console.log("should notify", step.name);
+    // const isNextStep = this.#incrementStepIndex();
+    if (this.#isLastStep(step)) {
+      console.log("finish");
+      this.emit("finish");
+    }
+
+    this.emit("step", step);
   }
 
   updateLocation(location: Location) {
     try {
       this.location = location;
-      if (this.hasDeviated()) {
+      const step = this.#getNextStep(location);
+
+      if (!step) {
+        // TODO: test this
         this.emit("deviation");
+        return;
       }
 
-      // TODO should handle skipping steps
-      const step = this.steps[this.currentStepIndex];
-
       if (this.shouldNotify(step)) {
-        console.log("should notify");
-        const isNextStep = this.#incrementStepIndex();
-        if (!isNextStep) {
-          this.emit("finished");
-        }
-
-        this.emit("step", step);
+        this.#notify(step);
       }
     } catch (err) {
       this.emit("error", err);
