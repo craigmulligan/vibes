@@ -1,13 +1,5 @@
 import EventEmitter from "events";
-import {
-  buffer,
-  booleanPointInPolygon,
-  distance as turfDistance,
-  LineString,
-  Feature,
-  Polygon,
-  nearestPointOnLine,
-} from "@turf/turf";
+import turf from "@turf/turf";
 import {
   DirectionsResponse,
   Route,
@@ -27,13 +19,13 @@ class Director extends EventEmitter {
   location: Location;
   currentStepIndex: number;
   // Route is the full route geojson
-  route: Route<LineString>;
+  route: Route<turf.LineString>;
   // step route is just the locations
   steps: Step[];
   leadDistance: number;
   // a buffer around the this.route
   // which we check to see if user has hasDeviated.
-  buffedRoute: Feature<Polygon>;
+  buffedRoute: turf.Feature<turf.Polygon>;
   options: {
     leadDistance: number;
     buffer: number;
@@ -41,7 +33,7 @@ class Director extends EventEmitter {
 
   // this takes a mapbox direction response and emits the manuers based on the current location
   constructor(
-    res: DirectionsResponse<LineString>,
+    res: DirectionsResponse<turf.LineString>,
     options: Options = { leadDistance: 20, buffer: 50 },
   ) {
     super();
@@ -58,18 +50,18 @@ class Director extends EventEmitter {
     this.leadDistance = opts.leadDistance;
     this.route = res.routes[0];
     this.steps = this.route.legs[0].steps;
-    this.buffedRoute = buffer(this.route.geometry, opts.buffer, {
+    this.buffedRoute = turf.buffer(this.route.geometry, opts.buffer, {
       units: "meters",
     });
     this.location = opts.location || res.waypoints[0].coordinates;
   }
 
   hasDeviated() {
-    return booleanPointInPolygon(this.location, this.buffedRoute);
+    return turf.booleanPointInPolygon(this.location, this.buffedRoute);
   }
 
   shouldNotify(step: Step) {
-    const distance = turfDistance(this.location, step.maneuver.location, {
+    const distance = turf.distance(this.location, step.maneuver.location, {
       units: "meters",
     });
 
@@ -83,21 +75,21 @@ class Director extends EventEmitter {
     const remainingSteps = this.steps.slice(this.currentStepIndex);
 
     for (const step of remainingSteps) {
-      const isInStep = booleanPointInPolygon(
+      const isInStep = turf.booleanPointInPolygon(
         location,
-        buffer(step.geometry, this.options.buffer),
+        turf.buffer(step.geometry, this.options.buffer),
       );
 
       if (isInStep) {
         // check if we have already passed the manuever.
         // this can happen if don't get a loc before the maneuver
         // First get distance on line from manuever to end.
-        const maneuverPoint = nearestPointOnLine(
+        const maneuverPoint = turf.nearestPointOnLine(
           step.geometry,
           step.maneuver.location,
         );
+        const locationPoint = turf.nearestPointOnLine(step.geometry, location);
 
-        const locationPoint = nearestPointOnLine(step.geometry, location);
         if (
           typeof locationPoint.properties.index === "number" &&
           typeof maneuverPoint.properties.index === "number" &&
