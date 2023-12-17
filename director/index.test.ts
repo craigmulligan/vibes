@@ -55,7 +55,7 @@ describe("simple", () => {
 describe("multi + skips", () => {
   // this test cases has multipe locations per line segment and
   // in some cases doesn't have a location within lead distance of a manuever
-  test.skip("multiSkipSteps", () => {
+  test("multiSkipSteps", () => {
     const stepCallback = mock.fn();
     const finishCallback = mock.fn();
     d.on("step", stepCallback);
