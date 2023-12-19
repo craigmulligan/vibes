@@ -4,7 +4,9 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "test": "node --experimental-modules --import tsx --test **/*.test.ts"
+    "test": "node --experimental-modules --import tsx --test **/*.test.ts",
+    "test:debug": "node --inspect-brk --experimental-modules --import tsx --test **/*.test.ts",
+    "types:check": "tsc --noEmit"
   },
   "dependencies": {
     "@mapbox/mapbox-sdk": "^0.15.3",

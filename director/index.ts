@@ -1,10 +1,7 @@
 import EventEmitter from "events";
 import * as turf from "@turf/turf";
-import {
-  DirectionsResponse,
-  Route,
-  Step,
-} from "@mapbox/mapbox-sdk/services/directions";
+import { Route, Step } from "@mapbox/mapbox-sdk/services/directions";
+import { IRouter } from "router";
 
 export type Location = [number, number];
 
@@ -17,26 +14,26 @@ type Options = {
 class Director extends EventEmitter {
   // Current users location
   location: Location;
+  destination: Location;
   currentStepIndex: number;
   // Route is the full route geojson
-  route: Route<turf.LineString>;
+  route?: Route<turf.LineString>;
   // step route is just the locations
   steps: Step[];
-  leadDistance: number;
-  // a buffer around the this.route
-  // which we check to see if user has hasDeviated.
-  buffedRoute: turf.Feature<turf.Polygon>;
   options: {
     leadDistance: number;
     buffer: number;
   };
+  router: IRouter;
 
   // this takes a mapbox direction response and emits the manuers based on the current location
   constructor(
-    res: DirectionsResponse<turf.LineString>,
+    router: IRouter,
     options: Options = { leadDistance: 20, buffer: 50 },
   ) {
     super();
+
+    this.router = router;
 
     const opts = {
       ...options,
@@ -45,19 +42,19 @@ class Director extends EventEmitter {
 
     this.currentStepIndex = 0;
     this.options = opts;
-
-    // the distance when a step is primed/appropriate for the client
-    this.leadDistance = opts.leadDistance;
-    this.route = res.routes[0];
-    this.steps = this.route.legs[0].steps;
-    this.buffedRoute = turf.buffer(this.route.geometry, opts.buffer, {
-      units: "meters",
-    });
-    this.location = opts.location || res.waypoints[0].coordinates;
+    this.location = [0, 0];
+    this.destination = [0, 0];
+    this.steps = [];
   }
 
-  hasDeviated() {
-    return turf.booleanPointInPolygon(this.location, this.buffedRoute);
+  async navigate(start: Location, end: Location) {
+    this.destination = end;
+    const res = await this.router.getRoute(start, end);
+    // todo handle multilinestring
+    this.route = res.routes[0] as Route<turf.LineString>;
+    this.steps = this.route.legs[0].steps;
+    this.currentStepIndex = 0;
+    this.emit("route", this.route);
   }
 
   shouldNotify(step: Step) {
@@ -65,7 +62,7 @@ class Director extends EventEmitter {
       units: "meters",
     });
 
-    if (distance <= this.leadDistance) {
+    if (distance <= this.options.leadDistance) {
       return true;
     }
     return false;
@@ -77,7 +74,7 @@ class Director extends EventEmitter {
     for (const step of remainingSteps) {
       const isInStep = turf.booleanPointInPolygon(
         location,
-        turf.buffer(step.geometry, this.options.buffer),
+        turf.buffer(step.geometry, this.options.buffer, { units: "meters" }),
       );
 
       if (isInStep) {
@@ -114,9 +111,7 @@ class Director extends EventEmitter {
   }
 
   #notify(step: Step) {
-    // const isNextStep = this.#incrementStepIndex();
     if (this.#isLastStep(step)) {
-      console.log("finish");
       this.emit("finish");
     }
 
@@ -124,15 +119,16 @@ class Director extends EventEmitter {
     this.currentStepIndex = this.steps.indexOf(step) + 1;
   }
 
-  updateLocation(location: Location) {
+  async updateLocation(location: Location): Promise<void> {
     try {
       this.location = location;
       const step = this.#getNextStep(location);
 
       if (!step) {
-        // TODO: test this
         this.emit("deviation");
-        return;
+        // re-start the navigation
+        await this.navigate(this.location, this.destination);
+        return this.updateLocation(this.location);
       }
 
       if (this.shouldNotify(step)) {
