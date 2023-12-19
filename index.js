@@ -15,8 +15,8 @@ const directionsClient = mbxDirections({
         {
           name: 'Start',
           coordinates: [
-            -118.506001,
-            34.022483
+            -118.50251276419922,
+            34.019591183766934
           ]
         },
         {
@@ -33,7 +33,7 @@ const directionsClient = mbxDirections({
       .getDirections(config)
       .send(config)
       .then(res => {
-        fs.writeFileSync('./director/simple.res.json', JSON.stringify(res.body, null, 2))
+        fs.writeFileSync('./director/rerouted.res.json', JSON.stringify(res.body, null, 2))
       })
       .catch(console.log)
   })()
