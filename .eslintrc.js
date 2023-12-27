@@ -18,5 +18,6 @@ module.exports = {
   ignorePatterns: ['.eslintrc.js'],
   rules: {
     '@typescript-eslint/explicit-function-return-type': 'off',
+    "no-unused-vars": ["error", { "argsIgnorePattern": "^_" }]
   },
 };
