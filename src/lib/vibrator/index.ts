@@ -17,7 +17,27 @@ class Vibrator {
     this.director.on("deviation", this.#onDeviation.bind(this));
 
     this.vibrationPatterns = {
-      deviation: [500, 500] as const,
+      // director events
+      deviation: [1000, 1000, 1000] as const,
+
+      // mmaneuvers
+      arrive: [1000] as const,
+      depart: [1000] as const,
+
+      // Right now we treat all maneuvers
+      // as "turns"
+      turn: [500] as const,
+
+      // modifiers
+      right: [100] as const,
+      left: [100, 100, 100] as const,
+      straight: [100, 100] as const,
+
+      rightSharp: [100] as const,
+      leftSharp: [100, 100, 100] as const,
+
+      rightSlight: [100] as const,
+      leftSlight: [100, 100, 100] as const,
     };
   }
 
@@ -26,7 +46,29 @@ class Vibrator {
   }
 
   #onStep(step: Step) {
-    console.log(step);
+    switch (step.maneuver.type) {
+      case "depart":
+        return this.vibrate(this.vibrationPatterns.depart);
+      case "arrive":
+        return this.vibrate(this.vibrationPatterns.arrive);
+      default:
+        if (
+          step.maneuver.modifier &&
+          step.maneuver.modifier in this.vibrationPatterns
+        ) {
+          const modifierSignature =
+            this.vibrationPatterns[step.maneuver.modifier];
+
+          return this.vibrate([
+            ...this.vibrationPatterns.turn,
+            ...modifierSignature,
+          ]);
+        } else {
+          throw new Error(
+            `Unknown maneuver or modifier  - ${step.maneuver.type} - ${step.maneuver.modifier}`,
+          );
+        }
+    }
   }
 
   #onRoute(route: Route<LineString>) {
