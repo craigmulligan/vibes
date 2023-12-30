@@ -143,10 +143,11 @@ class Director extends EventEmitter {
   }
 
   async updateLocation(location: Location): Promise<void> {
+    console.log("updateLocation", location);
     try {
       this.location = location;
 
-      if (!this.destination) {
+      if (!this.destination || !this.route) {
         return;
       }
 
