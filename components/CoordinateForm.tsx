@@ -86,6 +86,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 16,
     padding: 8,
+    width: "100%",
   },
   suggestion: {
     padding: 8,
