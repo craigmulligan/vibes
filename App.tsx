@@ -4,22 +4,19 @@ import {
   StyleSheet,
   Text,
   View,
-  Vibration,
   ActivityIndicator,
   Button,
 } from "react-native";
-import Router, { MockRouter } from "./lib/router";
-import Director from "./lib/director";
-import Vibrator from "./lib/vibrator";
 import { Step } from "@mapbox/mapbox-sdk/services/directions";
 import simpleSteps from "./lib/director/simple.steps.json";
-import simpleRes from "./lib/director/simple.res.json";
+import simpleRes from './lib/director/simple.res.json'
 import { Location } from "./lib/director";
 import StepOverlay from "./components/StepOverlay";
 import DestinationForm from "./components/CoordinateForm";
 import Toggle from "./components/Toggle";
 import * as ExpoLocation from "expo-location";
 import { Feature, Point } from "@turf/turf";
+import useDirector, { useMockDirector } from "./hooks/useDirector";
 
 export default function App() {
   const [currentStep, setCurrentStep] = useState<Step>();
@@ -31,17 +28,25 @@ export default function App() {
   const [status, requestPermission] = ExpoLocation.useBackgroundPermissions();
   const [error, setError] = useState("");
   const [currentLocation, setCurrentLocation] = useState<Location>();
+  const { director } = useDirector()
+  const { director: mockDirector } = useMockDirector()
 
   useEffect(() => {
     if (!status) {
       requestPermission();
     } else {
       async function fetchCurrentLocation() {
-        const currentLocation = await ExpoLocation.getCurrentPositionAsync();
-        setCurrentLocation([
-          currentLocation.coords.longitude,
-          currentLocation.coords.latitude,
-        ]);
+        try {
+          const currentLocation = await ExpoLocation.getCurrentPositionAsync();
+          setCurrentLocation([
+            currentLocation.coords.longitude,
+            currentLocation.coords.latitude,
+          ]);
+        } catch (error) {
+          if (error instanceof Error) {
+            setError(error.message)
+          }
+        }
       }
 
       fetchCurrentLocation();
@@ -59,33 +64,33 @@ export default function App() {
       return;
     }
 
-    console.log("starting navigate", { destination });
+    let locationSubscription: ExpoLocation.LocationSubscription;
 
-    const router = new Router(process.env.EXPO_PUBLIC_MAPBOX_TOKEN as string);
-    const director = new Director(router);
-    new Vibrator(director, Vibration.vibrate);
+    const onRoute = () => {
+      setIsLoading(false);
+    }
 
-    let timerId: NodeJS.Timeout;
+    const onStep = (step: Step) => {
+      setCurrentStep(step);
+    }
+
+    const onFinish = () => {
+      locationSubscription.remove()
+    }
+
+    const onDeviation = () => {
+      setIsLoading(true);
+      console.log("deviation");
+    }
+
+    director.on("route", onRoute);
+    director.on("step", onStep);
+    director.on("finish", onFinish);
+    director.on("deviation", onDeviation);
 
     const start = async () => {
-      director.on("route", () => {
-        setIsLoading(false);
-      });
-
-      director.on("step", (step) => {
-        setCurrentStep(step);
-      });
-
-      director.on("finish", () => {
-        clearInterval(timerId);
-      });
-
-      director.on("deviation", () => {
-        setIsLoading(true);
-        console.log("deviation");
-      });
-
-      let locationSubscription: ExpoLocation.LocationSubscription;
+      setIsLoading(true);
+      console.log("starting navigate", { destination });
       try {
         locationSubscription = await ExpoLocation.watchPositionAsync(
           {
@@ -120,70 +125,91 @@ export default function App() {
           throw error;
         }
       }
-
-      return () => {
-        if (locationSubscription) {
-          locationSubscription.remove();
-        }
-      };
     };
 
     start();
 
     return () => {
-      clearInterval(timerId);
+      if (locationSubscription) {
+        locationSubscription.remove();
+      }
+      director.removeListener("route", onRoute);
+      director.removeListener("step", onStep);
+      director.removeListener("finish", onFinish);
+      director.removeListener("deviation", onDeviation);
     };
   }, [shouldSimulate, destination, status, currentLocation, error]);
+
+  useEffect(() => {
+    if (shouldSimulate && !destination) {
+      const lastStep = simpleRes.routes[0].legs[0].steps.at(-1) as Step
+
+      const destination = {
+        type: "Feature" as const,
+        geometry: {
+          type: "Point" as const,
+          coordinates: lastStep.geometry.coordinates as any,
+        },
+        properties: { name: "simulation" },
+      }
+
+      console.log("set destination", JSON.stringify(destination))
+      setDestination(destination)
+    }
+
+  }, [shouldSimulate])
 
   useEffect(() => {
     // this effect handles running a
     // simulation of a basic route.
     // used for dev/testing.
-    if (!shouldSimulate) {
+    if (!shouldSimulate || !destination || error) {
+      console.log({ shouldSimulate, destination, error })
       return;
     }
-    const router = new MockRouter();
-    const director = new Director(router);
-    new Vibrator(director, Vibration.vibrate);
-
     let timerId: NodeJS.Timeout;
 
+
+    const onRoute = () => {
+      setIsLoading(false);
+    }
+
+    const onFinish = () => {
+      console.log("finish");
+      setShouldSimulate(false);
+      clearInterval(timerId);
+    }
+
+    const onStep = (step: Step) => {
+      console.log("step", step);
+      setCurrentStep(step);
+    }
+
+    const onDeviation = () => {
+      setIsLoading(true);
+      console.log("deviation");
+    }
+
+    const coords = simpleSteps.features
+      .filter((f) => f.geometry.type === "Point")
+      .map((f) => f.geometry.coordinates) as Location[];
+
+    mockDirector.on("route", onRoute);
+    mockDirector.on("finish", onFinish);
+    mockDirector.on("step", onStep);
+    mockDirector.on("deviation", onDeviation);
+
     const start = async () => {
-      const coords = simpleSteps.features
-        .filter((f) => f.geometry.type === "Point")
-        .map((f) => f.geometry.coordinates) as Location[];
-
-      router.setResponse(simpleRes as any);
-      director.on("route", () => {
-        setIsLoading(false);
-      });
-
-      director.on("step", (step) => {
-        console.log("step", step);
-        setCurrentStep(step);
-      });
-
-      director.on("finish", () => {
-        console.log("finish");
-        setShouldSimulate(false);
-        clearInterval(timerId);
-      });
-
-      director.on("deviation", () => {
-        setIsLoading(true);
-        console.log("deviation");
-      });
-
-      await director.navigate(
+      setIsLoading(true);
+      await mockDirector.navigate(
         [-118.506001, 34.022483],
         [-118.490471, 34.01714],
       );
-      setIsLoading(true);
 
       timerId = setInterval(async () => {
         const location = coords.shift();
         if (location) {
-          await director.updateLocation(location);
+          await mockDirector.updateLocation(location);
         }
       }, 5000);
 
@@ -194,8 +220,12 @@ export default function App() {
 
     return () => {
       clearInterval(timerId);
+      mockDirector.removeListener("route", onRoute)
+      mockDirector.removeListener("finish", onFinish);
+      mockDirector.removeListener("step", onStep);
+      mockDirector.removeListener("deviation", onDeviation);
     };
-  }, [shouldSimulate]);
+  }, [shouldSimulate, destination, error]);
 
   return (
     <View style={styles.container}>
@@ -231,7 +261,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   main: {
-    flex: 0.75, // Takes up 25% of the container's height
+    flex: 0.75,
     alignItems: "center",
     justifyContent: "center",
   },
