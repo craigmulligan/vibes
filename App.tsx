@@ -49,11 +49,17 @@ export default function App() {
   }, [status]);
 
   useEffect(() => {
-    if (shouldSimulate || !destination || !status || !currentLocation) {
+    if (
+      shouldSimulate ||
+      !destination ||
+      !status ||
+      !currentLocation ||
+      error
+    ) {
       return;
     }
 
-    console.log({ destination });
+    console.log("starting navigate", { destination });
 
     const router = new Router(process.env.EXPO_PUBLIC_MAPBOX_TOKEN as string);
     const director = new Director(router);
@@ -88,12 +94,18 @@ export default function App() {
             distanceInterval: 1,
           },
           async (location) => {
-            await director.updateLocation([
-              location.coords.longitude,
-              location.coords.longitude,
-            ]);
-            // Log the new location update
-            console.log("New Location:", location.coords);
+            try {
+              await director.updateLocation([
+                location.coords.longitude,
+                location.coords.latitude,
+              ]);
+            } catch (error) {
+              if (error instanceof Error) {
+                setError(error.message);
+              } else {
+                throw error;
+              }
+            }
           },
         );
 
@@ -121,7 +133,7 @@ export default function App() {
     return () => {
       clearInterval(timerId);
     };
-  }, [shouldSimulate, destination, status, currentLocation]);
+  }, [shouldSimulate, destination, status, currentLocation, error]);
 
   useEffect(() => {
     // this effect handles running a
