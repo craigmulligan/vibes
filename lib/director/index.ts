@@ -75,7 +75,7 @@ class Director extends EventEmitter {
     return false;
   }
 
-  #hasDeviated(location: Location) {
+  hasDeviated(location: Location) {
     if (!this.route) {
       throw new Error("No route");
     }
@@ -90,7 +90,7 @@ class Director extends EventEmitter {
     return !withinRoute;
   }
 
-  #getNextStep(location: Location): Step | undefined {
+  getNextStep(location: Location): Step | undefined {
     const remainingSteps = this.steps.slice(this.currentStepIndex);
 
     for (const step of remainingSteps) {
@@ -123,7 +123,7 @@ class Director extends EventEmitter {
     }
   }
 
-  #isLastStep(step: Step) {
+  isLastStep(step: Step) {
     const index = this.steps.indexOf(step);
     if (index === this.steps.length - 1) {
       return true;
@@ -132,8 +132,8 @@ class Director extends EventEmitter {
     return false;
   }
 
-  #notify(step: Step) {
-    if (this.#isLastStep(step)) {
+  notify(step: Step) {
+    if (this.isLastStep(step)) {
       this.destination = null;
       this.emit("finish");
     }
@@ -151,16 +151,16 @@ class Director extends EventEmitter {
         return;
       }
 
-      if (this.#hasDeviated(location)) {
+      if (this.hasDeviated(location)) {
         this.emit("deviation");
         await this.navigate(this.location, this.destination);
         return this.updateLocation(this.location);
       }
 
-      const step = this.#getNextStep(location);
+      const step = this.getNextStep(location);
 
       if (step && this.shouldNotify(step)) {
-        this.#notify(step);
+        this.notify(step);
       }
     } catch (err) {
       this.emit("error", err);
