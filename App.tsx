@@ -7,29 +7,27 @@ import {
   ActivityIndicator,
   Button,
 } from "react-native";
-import { Step } from "@mapbox/mapbox-sdk/services/directions";
-import simpleSteps from "./lib/director/simple.steps.json";
-import simpleRes from './lib/director/simple.res.json'
+import { Route, Step } from "@mapbox/mapbox-sdk/services/directions";
 import { Location } from "./lib/director";
 import StepOverlay from "./components/StepOverlay";
 import DestinationForm from "./components/CoordinateForm";
 import Toggle from "./components/Toggle";
 import * as ExpoLocation from "expo-location";
-import { Feature, Point } from "@turf/turf";
-import useDirector, { useMockDirector } from "./hooks/useDirector";
+import * as turf from "@turf/turf";
+import useDirector from "./hooks/useDirector";
+import { generateEquallySpacedPointsAlongLine } from "./lib/utils";
 
 export default function App() {
   const [currentStep, setCurrentStep] = useState<Step>();
   const [isLoading, setIsLoading] = useState(false);
   const [shouldSimulate, setShouldSimulate] = useState(false);
-  const [destination, setDestination] = useState<Feature<Point> | undefined>(
+  const [destination, setDestination] = useState<turf.Feature<turf.Point> | undefined>(
     undefined,
   );
   const [status, requestPermission] = ExpoLocation.useBackgroundPermissions();
   const [error, setError] = useState("");
   const [currentLocation, setCurrentLocation] = useState<Location>();
   const { director } = useDirector()
-  const { director: mockDirector } = useMockDirector()
 
   useEffect(() => {
     if (!status) {
@@ -141,25 +139,6 @@ export default function App() {
   }, [shouldSimulate, destination, status, currentLocation, error]);
 
   useEffect(() => {
-    if (shouldSimulate && !destination) {
-      const lastStep = simpleRes.routes[0].legs[0].steps.at(-1) as Step
-
-      const destination = {
-        type: "Feature" as const,
-        geometry: {
-          type: "Point" as const,
-          coordinates: lastStep.geometry.coordinates as any,
-        },
-        properties: { name: "simulation" },
-      }
-
-      console.log("set destination", JSON.stringify(destination))
-      setDestination(destination)
-    }
-
-  }, [shouldSimulate])
-
-  useEffect(() => {
     // this effect handles running a
     // simulation of a basic route.
     // used for dev/testing.
@@ -170,8 +149,17 @@ export default function App() {
     let timerId: NodeJS.Timeout;
 
 
-    const onRoute = () => {
+    const onRoute = (route: Route<turf.LineString>) => {
       setIsLoading(false);
+      const coords = generateEquallySpacedPointsAlongLine(route.geometry, 10);
+
+      // here we incrementall load each point
+      timerId = setInterval(async () => {
+        const location = coords.shift();
+        if (location) {
+          await director.updateLocation(location);
+        }
+      }, 5000);
     }
 
     const onFinish = () => {
@@ -190,40 +178,28 @@ export default function App() {
       console.log("deviation");
     }
 
-    const coords = simpleSteps.features
-      .filter((f) => f.geometry.type === "Point")
-      .map((f) => f.geometry.coordinates) as Location[];
 
-    mockDirector.on("route", onRoute);
-    mockDirector.on("finish", onFinish);
-    mockDirector.on("step", onStep);
-    mockDirector.on("deviation", onDeviation);
+    director.on("route", onRoute);
+    director.on("finish", onFinish);
+    director.on("step", onStep);
+    director.on("deviation", onDeviation);
 
     const start = async () => {
       setIsLoading(true);
-      await mockDirector.navigate(
+      await director.navigate(
         [-118.506001, 34.022483],
         [-118.490471, 34.01714],
       );
-
-      timerId = setInterval(async () => {
-        const location = coords.shift();
-        if (location) {
-          await mockDirector.updateLocation(location);
-        }
-      }, 5000);
-
-      return timerId;
     };
 
     start();
 
     return () => {
       clearInterval(timerId);
-      mockDirector.removeListener("route", onRoute)
-      mockDirector.removeListener("finish", onFinish);
-      mockDirector.removeListener("step", onStep);
-      mockDirector.removeListener("deviation", onDeviation);
+      director.removeListener("route", onRoute)
+      director.removeListener("finish", onFinish);
+      director.removeListener("step", onStep);
+      director.removeListener("deviation", onDeviation);
     };
   }, [shouldSimulate, destination, error]);
 
