@@ -1,7 +1,6 @@
-import { Step, Route } from "@mapbox/mapbox-sdk/services/directions";
+import { Step } from "@mapbox/mapbox-sdk/services/directions";
 import Director from "../director";
 import { Vibration } from "react-native";
-import { LineString } from "@turf/turf";
 
 const wait = 500;
 
@@ -14,8 +13,8 @@ class Vibrator {
     this.vibrate = vibrate;
     this.director = director;
     // setup event listeners
-    this.director.on("step", this.#onStep.bind(this));
-    this.director.on("deviation", this.#onDeviation.bind(this));
+    this.director.on("step", this.onStep.bind(this));
+    this.director.on("deviation", this.onDeviation.bind(this));
 
     this.vibrationPatterns = {
       // director events
@@ -42,7 +41,7 @@ class Vibrator {
     } as const;
   }
 
-  #onStep(step: Step) {
+  onStep(step: Step) {
     switch (step.maneuver.type) {
       case "depart":
         return this.vibrate(this.vibrationPatterns.depart);
@@ -68,7 +67,7 @@ class Vibrator {
     }
   }
 
-  #onDeviation() {
+  onDeviation() {
     this.vibrate(this.vibrationPatterns.deviation);
   }
 }
