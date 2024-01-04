@@ -13,7 +13,8 @@ export function generateEquallySpacedPointsAlongLine(ls: turf.LineString, numPoi
     equallySpacedPoints.push(point.geometry.coordinates);
   }
 
-  // Add the last point in the LineString to ensure it is included
+  // Add the last point in the LineString to ensure 
+  // we reach the destination.
   equallySpacedPoints.push(lineString.geometry.coordinates[lineString.geometry.coordinates.length - 1]);
 
   return equallySpacedPoints as Location[];
