@@ -4,11 +4,12 @@ import Director from "../lib/director"
 import Router from "../lib/router"
 import { Vibration } from "react-native"
 
-const useDirector = () => {
+const useDirector = ({ vibrate = true }: { vibrate: boolean }) => {
   const result = useMemo(() => {
     const router = new Router(process.env.EXPO_PUBLIC_MAPBOX_TOKEN as string);
     const director = new Director(router);
-    const vibrator = new Vibrator(director, Vibration.vibrate);
+    const vibration = vibrate ? Vibration.vibrate : () => { }
+    const vibrator = new Vibrator(director, vibration);
 
     return { director, vibrator, router }
   }, [])
