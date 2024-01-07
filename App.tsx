@@ -16,7 +16,7 @@ import * as ExpoLocation from "expo-location";
 import * as turf from "@turf/turf";
 import useDirector from "./hooks/useDirector";
 import { generateEquallySpacedPointsAlongLine } from "./lib/utils";
-import MapView from 'react-native-maps';
+import MapView, { Geojson, Marker } from 'react-native-maps';
 
 export default function App() {
   const [currentStep, setCurrentStep] = useState<Step>();
@@ -28,7 +28,8 @@ export default function App() {
   const [status, requestPermission] = ExpoLocation.useBackgroundPermissions();
   const [error, setError] = useState("");
   const [currentLocation, setCurrentLocation] = useState<Location>();
-  const { director } = useDirector({ vibrate: false })
+  const [route, setRoute] = useState<any | undefined>()
+  const { director } = useDirector({ vibrate: true })
 
   useEffect(() => {
     setTimeout(() => {
@@ -182,7 +183,7 @@ export default function App() {
           console.log("new simulated location", location)
           setCurrentLocation(location)
         }
-      }, 5000);
+      }, 1000);
     }
 
     const onFinish = () => {
@@ -217,28 +218,63 @@ export default function App() {
     };
   }, [shouldSimulate, destination, error]);
 
+  useEffect(() => {
+    function updateRoute(route: any) {
+      const feat = turf.feature(route.geometry)
+      setRoute({
+        "type": "FeatureCollection",
+        "features": [feat],
+        "properties": {}
+      })
+    }
+
+    director.on("route", updateRoute)
+
+    return () => { director.removeListener("deviation", updateRoute) };
+  }, [])
+
+  if (!currentLocation) {
+    return <View><Text>Enable location</Text></View>
+  }
+
   return (
     <View style={styles.container}>
       <StatusBar style="auto" />
-      <View style={styles.main}>
-        <MapView style={styles.map} />
-        <Text>Good vibes</Text>
-        <Toggle value={shouldSimulate} setValue={setShouldSimulate} />
-        {destination && (
-          <Button title="cancel" onPress={() => setDestination(undefined)} />
-        )}
-        {!destination && currentLocation && (
-          <DestinationForm
-            onSelect={setDestination}
-            currentLocation={currentLocation}
-          />
-        )}
-        {error && <Text>{error}</Text>}
-        {isLoading && <ActivityIndicator size="large" />}
-      </View>
+      <MapView
+        region={{
+          latitude: currentLocation[1],
+          longitude: currentLocation[0],
+          latitudeDelta: 0.00922,
+          longitudeDelta: 0.00421,
+        }}
+        style={styles.map}>
+        {route &&
+          <Geojson
+            geojson={route as any}
+            strokeColor="red"
+            fillColor="green"
+            strokeWidth={2}
+          />}
+        {currentLocation && <Marker pinColor="blue" coordinate={{ latitude: currentLocation[1], longitude: currentLocation[0] }} />}
+        {destination && <Marker coordinate={{ latitude: destination.geometry.coordinates[1], longitude: destination.geometry.coordinates[0] }} />}
+      </MapView>
       <View style={styles.footer}>
         {currentStep && <StepOverlay step={currentStep} />}
       </View>
+      {/* <View style={styles.main}> */}
+      {/*   <Toggle value={shouldSimulate} setValue={setShouldSimulate} /> */}
+      {/*   {destination && ( */}
+      {/*     <Button title="cancel" onPress={() => setDestination(undefined)} /> */}
+      {/*   )} */}
+      {/*   {!destination && currentLocation && ( */}
+      {/*     <DestinationForm */}
+      {/*       onSelect={setDestination} */}
+      {/*       currentLocation={currentLocation} */}
+      {/*     /> */}
+      {/*   )} */}
+      {/*   {error && <Text>{error}</Text>} */}
+      {/*   {isLoading && <ActivityIndicator size="large" />} */}
+      {/* </View> */}
     </View>
   );
 }
@@ -257,8 +293,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   footer: {
-    flex: 0.25,
+    position: "absolute",
+    height: "20%",
     width: "100%",
+    bottom: 0,
+    backgroundColor: "red",
   },
   error: {
     color: "salmon",
