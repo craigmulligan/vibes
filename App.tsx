@@ -245,6 +245,9 @@ export default function App() {
     <View style={styles.container}>
       <StatusBar style="auto" />
       <MapView
+        showsUserLocation={true}
+        followsUserLocation={true}
+        showsMyLocationButton={true}
         region={{
           latitude: currentLocation[1],
           longitude: currentLocation[0],
