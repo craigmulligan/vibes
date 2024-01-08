@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, Vibration } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { Step } from "@mapbox/mapbox-sdk/services/directions";
 
 const StepOverlay = ({ step }: { step: Step }) => {
