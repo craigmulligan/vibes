@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, Button, StyleSheet } from "react-native";
+import { View, Switch, StyleSheet } from "react-native";
 
 const Toggle = ({
   value,
@@ -14,8 +14,7 @@ const Toggle = ({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>{value ? "enabled" : "disabled"}</Text>
-      <Button title="Toggle Simulation" onPress={handleToggle} />
+      <Switch value={value} onValueChange={handleToggle} />
     </View>
   );
 };
@@ -25,10 +24,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-  },
-  text: {
-    fontSize: 18,
-    marginBottom: 20,
   },
 });
 
