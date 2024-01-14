@@ -7,17 +7,16 @@ import {
   ActivityIndicator,
   Button,
 } from "react-native";
-import { Route, Step } from "@mapbox/mapbox-sdk/services/directions";
+import { Step } from "@mapbox/mapbox-sdk/services/directions";
 import { Location } from "./lib/director";
 import StepOverlay from "./components/StepOverlay";
 import Search from "./components/Search";
 import Toggle from "./components/Toggle";
-import * as ExpoLocation from "expo-location";
 import * as turf from "@turf/turf";
 import useDirector from "./hooks/useDirector";
-import { generateEquallySpacedPointsAlongLine } from "./lib/utils";
 import MapView, { Geojson, Marker } from 'react-native-maps';
 import FullScreenMessage from "./components/FullScreenMessage";
+import useWatchLocation from "./hooks/useWatchLocation";
 // import defaultDestination from "./destination.json"
 
 export default function App() {
@@ -27,11 +26,9 @@ export default function App() {
   const [destination, setDestination] = useState<turf.Feature<turf.Point> | undefined>(
     undefined,
   );
-  const [status, requestPermission] = ExpoLocation.useBackgroundPermissions();
-  const [error, setError] = useState("");
-  const [currentLocation, setCurrentLocation] = useState<Location>();
   const [route, setRoute] = useState<any | undefined>()
   const { director } = useDirector({ vibrate: false })
+  const { currentLocation, error } = useWatchLocation({ shouldSimulate, director })
 
   useEffect(() => {
     // setTimeout(() => {
@@ -39,189 +36,36 @@ export default function App() {
     // }, 5000)
   }, [])
 
+  useEffect(() => {
+    const start = async () => {
+      setIsLoading(true);
+      if (!destination) {
+        throw new Error("missing current location or destination");
+      }
+      await director.navigate(
+        director.location,
+        destination.geometry.coordinates as Location,
+      );
+    };
+
+    if (destination) {
+      start()
+    }
+  }, [destination])
 
   useEffect(() => {
-    if (!status) {
-      requestPermission();
-    } else {
-      async function fetchCurrentLocation() {
-        try {
-          const currentLocation = await ExpoLocation.getCurrentPositionAsync();
-          setCurrentLocation([
-            currentLocation.coords.longitude,
-            currentLocation.coords.latitude,
-          ]);
-        } catch (error) {
-          if (error instanceof Error) {
-            setError(error.message)
-          }
-        }
-      }
-
-      fetchCurrentLocation();
-    }
-  }, [status]);
-
-  useEffect(() => {
-    async function updateLocation() {
-      if (currentLocation) {
-        await director.updateLocation(currentLocation);
-      }
-    }
-    updateLocation()
-  }, [currentLocation])
-
-  const start = async () => {
-    setIsLoading(true);
-    if (!currentLocation || !destination) {
-      throw new Error("missing current location or destination");
-    }
-    await director.navigate(
-      currentLocation,
-      destination.geometry.coordinates as Location,
-    );
-  };
-
-  useEffect(() => {
-    // non simulation mode
-    if (
-      shouldSimulate ||
-      !destination ||
-      !currentLocation ||
-      error
-    ) {
-      return;
-    }
-
-    let locationSubscription: ExpoLocation.LocationSubscription;
-
-    const watchLocation = async () => {
-      try {
-        console.log("setting up location watcher")
-        locationSubscription = await ExpoLocation.watchPositionAsync(
-          {
-            accuracy: ExpoLocation.Accuracy.BestForNavigation,
-            timeInterval: 1000,
-            distanceInterval: 1,
-          },
-          async (location) => {
-            try {
-              await director.updateLocation([
-                location.coords.longitude,
-                location.coords.latitude,
-              ]);
-            } catch (error) {
-              if (error instanceof Error) {
-                setError(error.message);
-              } else {
-                throw error;
-              }
-            }
-          },
-        );
-      } catch (error) {
-        if (error instanceof Error) {
-          setError(error.message);
-        } else {
-          throw error;
-        }
-      }
-    }
-
     const onRoute = () => {
       setIsLoading(false);
-      watchLocation();
-    }
-
-    const onStep = (step: Step) => {
-      setCurrentStep(step);
-    }
-
-    const onFinish = () => {
-      locationSubscription.remove()
     }
 
     const onDeviation = () => {
-      setIsLoading(true);
-      console.log("deviation");
-    }
-
-    director.on("route", onRoute);
-    director.on("step", onStep);
-    director.on("finish", onFinish);
-    director.on("deviation", onDeviation);
-
-    start();
-
-    return () => {
-      if (locationSubscription) {
-        locationSubscription.remove();
-      }
-      director.removeListener("route", onRoute);
-      director.removeListener("step", onStep);
-      director.removeListener("finish", onFinish);
-      director.removeListener("deviation", onDeviation);
-    };
-  }, [shouldSimulate, destination, status, currentLocation, error]);
-
-
-
-  useEffect(() => {
-    // simulation mode
-    if (!shouldSimulate || !destination || error) {
-      return;
-    }
-    console.log("starting simulation")
-    let timerId: NodeJS.Timeout;
-
-    const onRoute = (route: Route<turf.LineString>) => {
-      console.log("setting up simulated location")
       setIsLoading(false);
-      const coords = generateEquallySpacedPointsAlongLine(route.geometry, 100);
-
-      // here we incrementall load each point
-      timerId = setInterval(async () => {
-        const location = coords.shift();
-        if (location) {
-          console.log("new simulated location", location)
-          setCurrentLocation(location)
-        }
-      }, 1000);
-    }
-
-    const onFinish = () => {
-      console.log("finish");
-      clearInterval(timerId);
     }
 
     const onStep = (step: Step) => {
-      console.log("step", step);
       setCurrentStep(step);
     }
 
-    const onDeviation = () => {
-      setIsLoading(true);
-      console.log("deviation");
-    }
-
-
-    director.on("route", onRoute);
-    director.on("finish", onFinish);
-    director.on("step", onStep);
-    director.on("deviation", onDeviation);
-
-    start();
-
-    return () => {
-      clearInterval(timerId);
-      director.removeListener("route", onRoute)
-      director.removeListener("finish", onFinish);
-      director.removeListener("step", onStep);
-      director.removeListener("deviation", onDeviation);
-    };
-  }, [shouldSimulate, destination, error]);
-
-  useEffect(() => {
     function updateRoute(route: any) {
       const feat = turf.feature(route.geometry)
       setRoute({
@@ -232,9 +76,17 @@ export default function App() {
     }
 
     director.on("route", updateRoute)
+    director.on("route", onRoute);
+    director.on("step", onStep);
+    director.on("deviation", onDeviation);
 
-    return () => { director.removeListener("deviation", updateRoute) };
-  }, [])
+    return () => {
+      director.removeListener("route", onRoute);
+      director.removeListener("deviation", onDeviation);
+      director.removeListener("step", onStep);
+      director.removeListener("route", updateRoute)
+    }
+  }, [director])
 
   if (!currentLocation) {
     return <FullScreenMessage><Text>Location permissions are required for this app.</Text></FullScreenMessage>
