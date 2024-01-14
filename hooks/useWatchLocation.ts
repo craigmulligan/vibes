@@ -7,7 +7,6 @@ import Director, { Location } from "../lib/director";
 
 const useWatchLocation = ({ shouldSimulate, director }: { shouldSimulate: boolean, director: Director }) => {
   const [currentLocation, setCurrentLocation] = useState<Location>();
-  const [isWatching, setIsWatching] = useState(false);
   const [error, setError] = useState("");
   const [status, requestPermission] = ExpoLocation.useBackgroundPermissions();
 
@@ -67,14 +66,11 @@ const useWatchLocation = ({ shouldSimulate, director }: { shouldSimulate: boolea
     }
 
     const onFinish = () => {
-      console.log("finish");
       clearInterval(timerId);
     }
 
     director.on("route", onRoute);
     director.on("finish", onFinish);
-
-    setIsWatching(true)
 
     return () => {
       clearInterval(timerId);
@@ -127,6 +123,8 @@ const useWatchLocation = ({ shouldSimulate, director }: { shouldSimulate: boolea
       }
     }
 
+    watchLocation()
+
     const onFinish = () => {
       locationSubscription.remove()
     }
@@ -142,7 +140,6 @@ const useWatchLocation = ({ shouldSimulate, director }: { shouldSimulate: boolea
   }, [shouldSimulate, error]);
 
   return {
-    isWatching,
     currentLocation,
     error
   }

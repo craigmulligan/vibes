@@ -17,7 +17,7 @@ import useDirector from "./hooks/useDirector";
 import MapView, { Geojson, Marker } from 'react-native-maps';
 import FullScreenMessage from "./components/FullScreenMessage";
 import useWatchLocation from "./hooks/useWatchLocation";
-// import defaultDestination from "./destination.json"
+import defaultDestination from "./destination.json"
 
 export default function App() {
   const [currentStep, setCurrentStep] = useState<Step>();
@@ -31,16 +31,16 @@ export default function App() {
   const { currentLocation, error } = useWatchLocation({ shouldSimulate, director })
 
   useEffect(() => {
-    // setTimeout(() => {
-    //   setDestination(defaultDestination)
-    // }, 5000)
+    setTimeout(() => {
+      setDestination(defaultDestination as any)
+    }, 5000)
   }, [])
 
   useEffect(() => {
     const start = async () => {
       setIsLoading(true);
       if (!destination) {
-        throw new Error("missing current location or destination");
+        throw new Error("No destination is set");
       }
       await director.navigate(
         director.location,
@@ -100,10 +100,11 @@ export default function App() {
     <View style={styles.container}>
       <StatusBar style="auto" />
       <MapView
+        showsMyLocationButton={true}
         showsUserLocation={true}
         followsUserLocation={true}
-        showsMyLocationButton={true}
-        region={{
+        mapPadding={{ top: 50, left: 0, right: 0, bottom: 100 }}
+        initialRegion={{
           latitude: currentLocation[1],
           longitude: currentLocation[0],
           latitudeDelta: 0.00922,
@@ -117,7 +118,7 @@ export default function App() {
             fillColor="green"
             strokeWidth={2}
           />}
-        {currentLocation && <Marker pinColor="blue" coordinate={{ latitude: currentLocation[1], longitude: currentLocation[0] }} />}
+        {currentLocation && shouldSimulate && <Marker pinColor="blue" coordinate={{ latitude: currentLocation[1], longitude: currentLocation[0] }} />}
         {destination && <Marker coordinate={{ latitude: destination.geometry.coordinates[1], longitude: destination.geometry.coordinates[0] }} />}
       </MapView>
 
