@@ -47,9 +47,9 @@ class Director extends EventEmitter {
     this.steps = [];
   }
 
-  async navigate(start: Location, end: Location) {
-    this.destination = end;
-    const res = await this.router.getRoute(start, end);
+  async navigate(destination: Location) {
+    this.destination = destination;
+    const res = await this.router.getRoute(this.location, destination);
     if (res.routes.length === 0) {
       throw new Error("No route found");
     }
@@ -152,8 +152,8 @@ class Director extends EventEmitter {
 
       if (this.hasDeviated(location)) {
         this.emit("deviation");
-        await this.navigate(this.location, this.destination);
-        return this.updateLocation(this.location);
+        await this.navigate(this.destination);
+        return this.updateLocation(location);
       }
 
       const step = this.getNextStep(location);

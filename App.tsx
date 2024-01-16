@@ -43,7 +43,6 @@ export default function App() {
         throw new Error("No destination is set");
       }
       await director.navigate(
-        director.location,
         destination.geometry.coordinates as Location,
       );
     };
