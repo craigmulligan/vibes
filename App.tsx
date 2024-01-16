@@ -23,7 +23,7 @@ export default function App() {
   const [currentStep, setCurrentStep] = useState<Step>();
   const [isLoading, setIsLoading] = useState(false);
   const [shouldSimulate, setShouldSimulate] = useState(true);
-  const [destination, setDestination] = useState<turf.Feature<turf.Point> | undefined>(
+  const [destination, setDestination] = useState<Location | undefined>(
     undefined,
   );
   const [route, setRoute] = useState<any | undefined>()
@@ -43,7 +43,7 @@ export default function App() {
         throw new Error("No destination is set");
       }
       await director.navigate(
-        destination.geometry.coordinates as Location,
+        destination
       );
     };
 
@@ -118,7 +118,7 @@ export default function App() {
             strokeWidth={2}
           />}
         {currentLocation && shouldSimulate && <Marker pinColor="blue" coordinate={{ latitude: currentLocation[1], longitude: currentLocation[0] }} />}
-        {destination && <Marker coordinate={{ latitude: destination.geometry.coordinates[1], longitude: destination.geometry.coordinates[0] }} />}
+        {destination && <Marker coordinate={{ latitude: destination[1], longitude: destination[0] }} />}
       </MapView>
 
       <View style={styles.header}>

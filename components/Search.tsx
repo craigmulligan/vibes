@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { View, TextInput, FlatList, Text, StyleSheet } from "react-native";
 import { SearchBoxSuggestion, SessionToken } from "@mapbox/search-js-core";
 import useMapboxSearch from "../hooks/useSearchBoxCore";
-import { Feature, Point } from "@turf/turf";
 import { Location } from "../lib/director";
 
 const sessionToken = new SessionToken();
@@ -12,7 +11,7 @@ const AutocompleteInput = ({
   onSelect,
 }: {
   currentLocation: Location;
-  onSelect: (location: Feature<Point>) => void;
+  onSelect: (location: Location) => void;
 }) => {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<SearchBoxSuggestion[]>([]);
@@ -63,7 +62,7 @@ const AutocompleteInput = ({
 
               console.log("Selected feature:", JSON.stringify(features[0]));
 
-              onSelect(features[0]);
+              onSelect(features[0].geometry.coordinates);
               setSuggestions([]);
             }}
           >
