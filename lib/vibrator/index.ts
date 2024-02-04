@@ -38,6 +38,8 @@ class Vibrator {
 
       rightSlight: [wait * 2, 200] as const,
       leftSlight: [wait * 2, 200, wait, 200, wait, 200] as const,
+
+      // We treat slightRight 
     } as const;
   }
 
@@ -60,7 +62,8 @@ class Vibrator {
             ...modifierSignature,
           ]);
         } else {
-          throw new Error(
+          // we ignore things maneuvers we don't know how to handle.
+          console.error(
             `Unknown maneuver or modifier  - ${step.maneuver.type} - ${step.maneuver.modifier}`,
           );
         }
