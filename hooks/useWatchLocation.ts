@@ -8,15 +8,18 @@ import Director, { Location } from "../lib/director";
 const useWatchLocation = ({ shouldSimulate, director }: { shouldSimulate: boolean, director: Director }) => {
   const [currentLocation, setCurrentLocation] = useState<Location>();
   const [error, setError] = useState("");
-  const [status, requestPermission] = ExpoLocation.useBackgroundPermissions();
+  const [status, requestPermission] = ExpoLocation.useForegroundPermissions();
 
   useEffect(() => {
-    if (!status) {
+    if (!status?.granted) {
       requestPermission();
     } else {
       async function fetchCurrentLocation() {
         try {
           const currentLocation = await ExpoLocation.getCurrentPositionAsync();
+          if (!currentLocation) {
+            return
+          }
           setCurrentLocation([
             currentLocation.coords.longitude,
             currentLocation.coords.latitude,
@@ -29,6 +32,7 @@ const useWatchLocation = ({ shouldSimulate, director }: { shouldSimulate: boolea
         }
       }
 
+      console.log('fetching location')
       fetchCurrentLocation();
     }
   }, [status]);
