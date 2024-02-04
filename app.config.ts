@@ -50,6 +50,13 @@ export default {
       {
         "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
       }
+    ],
+    [
+      "@sentry/react-native/expo",
+      {
+        "organization": "craigmulligan.com",
+        "project": "vibes"
+      }
     ]
   ]
 }
