@@ -3,12 +3,13 @@ import Vibrator from "../lib/vibrator"
 import Director from "../lib/director"
 import Router from "../lib/router"
 import { Vibration } from "react-native"
+import { isDev } from "../lib/utils"
 
-const useDirector = ({ vibrate = true, apiKey }: { vibrate: boolean, apiKey: string }) => {
+const useDirector = ({ apiKey }: { apiKey: string }) => {
   const result = useMemo(() => {
     const router = new Router(apiKey);
     const director = new Director(router);
-    const vibration = vibrate ? Vibration.vibrate : () => { }
+    const vibration = isDev() ? () => { } : Vibration.vibrate
     const vibrator = new Vibrator(director, vibration);
 
     return { director, vibrator, router }

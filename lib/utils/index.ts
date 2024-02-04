@@ -19,3 +19,7 @@ export function generateEquallySpacedPointsAlongLine(ls: turf.LineString, numPoi
 
   return equallySpacedPoints as Location[];
 }
+
+export function isDev() {
+  return process.env.IS_DEV === "1"
+}
