@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   StyleSheet,
   Text,
@@ -30,6 +30,11 @@ export default function Map() {
   const [route, setRoute] = useState<any | undefined>()
   const { director } = useDirector({ apiKey: process.env.EXPO_PUBLIC_MAPBOX_KEY as string })
   const { currentLocation, error } = useWatchLocation({ shouldSimulate, director })
+
+  const cancel = useCallback(() => {
+    setDestination(undefined)
+    setCurrentStep(undefined)
+  }, [])
 
   // useEffect(() => {
   //   setTimeout(() => {
@@ -103,10 +108,9 @@ export default function Map() {
       <StatusBar style="auto" />
       <MapView
         provider={PROVIDER_GOOGLE}
-        showsMyLocationButton={true}
         showsUserLocation={true}
         followsUserLocation={true}
-        mapPadding={{ top: 50, left: 0, right: 0, bottom: 100 }}
+        mapPadding={{ top: 600, left: 0, right: 0, bottom: 0 }}
         initialRegion={{
           latitude: currentLocation[1],
           longitude: currentLocation[0],
@@ -143,10 +147,10 @@ export default function Map() {
       </View>
       <View style={styles.footer}>
         {destination && (
-          <Button title="cancel" onPress={() => setDestination(undefined)} />
+          <Button title="cancel" onPress={cancel} />
         )}
         {isLoading && <ActivityIndicator size="large" />}
-        {!destination && !isDev() && <Toggle value={shouldSimulate} setValue={setShouldSimulate} />}
+        {!destination && isDev() && <Toggle value={shouldSimulate} setValue={setShouldSimulate} />}
         {currentStep && <StepOverlay step={currentStep} />}
       </View>
     </View>
@@ -169,7 +173,7 @@ const styles = StyleSheet.create({
   header: {
     position: "absolute",
     width: "90%",
-    top: 120,
+    top: 70,
     marginLeft: 0,
     marginRight: 0,
     backgroundColor: 'white',
