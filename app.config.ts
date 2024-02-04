@@ -1,4 +1,4 @@
-{
+export default {
   "expo": {
     "name": "vibes",
     "slug": "vibes",
@@ -22,7 +22,12 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.craigmulligan.vibes"
+      "package": "com.craigmulligan.vibes",
+      "config": {
+        "googleMaps": {
+          "apiKey": process.env.EXPO_PUBLIC_GOOGLE_KEY
+        }
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
