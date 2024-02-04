@@ -13,14 +13,13 @@ import StepOverlay from "../components/StepOverlay";
 import Toggle from "./Toggle";
 import * as turf from "@turf/turf";
 import useDirector from "../hooks/useDirector";
-import MapView, { Geojson, Marker } from 'react-native-maps';
+import MapView, { Geojson, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import FullScreenMessage from "./FullScreenMessage";
 import useWatchLocation from "../hooks/useWatchLocation";
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
-import { ConfigData } from "../hooks/useConfig";
 // import defaultDestination from "./destination.json"
 
-export default function Map({ config }: { config: ConfigData }) {
+export default function Map() {
   const [currentStep, setCurrentStep] = useState<Step>();
   const [isLoading, setIsLoading] = useState(false);
   const [shouldSimulate, setShouldSimulate] = useState(true);
@@ -28,7 +27,7 @@ export default function Map({ config }: { config: ConfigData }) {
     undefined,
   );
   const [route, setRoute] = useState<any | undefined>()
-  const { director } = useDirector({ vibrate: false, apiKey: config.directionsKey })
+  const { director } = useDirector({ vibrate: false, apiKey: process.env.EXPO_PUBLIC_MAPBOX_KEY as string })
   const { currentLocation, error } = useWatchLocation({ shouldSimulate, director })
 
   // useEffect(() => {
@@ -102,6 +101,7 @@ export default function Map({ config }: { config: ConfigData }) {
     <View style={styles.container}>
       <StatusBar style="auto" />
       <MapView
+        provider={PROVIDER_GOOGLE}
         showsMyLocationButton={true}
         showsUserLocation={true}
         followsUserLocation={true}
@@ -134,7 +134,7 @@ export default function Map({ config }: { config: ConfigData }) {
               setDestination([details?.geometry.location.lng || 0, details?.geometry.location.lat || 0])
             }}
             query={{
-              key: config.searchKey,
+              key: process.env.EXPO_PUBLIC_GOOGLE_KEY as string,
               language: 'en',
             }}
           />
