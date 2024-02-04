@@ -31,6 +31,20 @@
       "eas": {
         "projectId": "d6263c55-380f-40cf-b0e7-3dcdd5077f32"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/d6263c55-380f-40cf-b0e7-3dcdd5077f32"
     }
-  }
+  },
+  "plugins": [
+    [
+      "expo-location",
+      {
+        "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
+      }
+    ]
+  ]
 }

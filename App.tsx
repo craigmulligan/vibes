@@ -10,7 +10,6 @@ import {
 import { Step } from "@mapbox/mapbox-sdk/services/directions";
 import { Location } from "./lib/director";
 import StepOverlay from "./components/StepOverlay";
-import Search from "./components/Search";
 import Toggle from "./components/Toggle";
 import * as turf from "@turf/turf";
 import useDirector from "./hooks/useDirector";
@@ -18,6 +17,7 @@ import MapView, { Geojson, Marker } from 'react-native-maps';
 import FullScreenMessage from "./components/FullScreenMessage";
 import useWatchLocation from "./hooks/useWatchLocation";
 import defaultDestination from "./destination.json"
+import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 
 export default function App() {
   const [currentStep, setCurrentStep] = useState<Step>();
@@ -30,11 +30,11 @@ export default function App() {
   const { director } = useDirector({ vibrate: false })
   const { currentLocation, error } = useWatchLocation({ shouldSimulate, director })
 
-  useEffect(() => {
-    setTimeout(() => {
-      setDestination(defaultDestination as any)
-    }, 5000)
-  }, [])
+  // useEffect(() => {
+  //   setTimeout(() => {
+  //     setDestination(defaultDestination.geometry.coordinates as Location)
+  //   }, 5000)
+  // }, [])
 
   useEffect(() => {
     const start = async () => {
@@ -123,9 +123,17 @@ export default function App() {
 
       <View style={styles.header}>
         {!destination && currentLocation && (
-          <Search
-            onSelect={setDestination}
-            currentLocation={currentLocation}
+          <GooglePlacesAutocomplete
+            placeholder='Search'
+            fetchDetails
+            onPress={(data, details = null) => {
+              // 'details' is provided when fetchDetails = true
+              setDestination([details?.geometry.location.lng || 0, details?.geometry.location.lat || 0])
+            }}
+            query={{
+              key: process.env.EXPO_PUBLIC_GOOGLE_API_KEY,
+              language: 'en',
+            }}
           />
         )}
       </View>
@@ -157,7 +165,7 @@ const styles = StyleSheet.create({
   header: {
     position: "absolute",
     width: "90%",
-    top: 50,
+    top: 150,
     marginLeft: 0,
     marginRight: 0,
     backgroundColor: 'white',
