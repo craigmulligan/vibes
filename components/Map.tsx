@@ -17,17 +17,18 @@ import MapView, { Geojson, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import FullScreenMessage from "./FullScreenMessage";
 import useWatchLocation from "../hooks/useWatchLocation";
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
+import { isDev } from "../lib/utils";
 // import defaultDestination from "./destination.json"
 
 export default function Map() {
   const [currentStep, setCurrentStep] = useState<Step>();
   const [isLoading, setIsLoading] = useState(false);
-  const [shouldSimulate, setShouldSimulate] = useState(true);
+  const [shouldSimulate, setShouldSimulate] = useState(isDev());
   const [destination, setDestination] = useState<Location | undefined>(
     undefined,
   );
   const [route, setRoute] = useState<any | undefined>()
-  const { director } = useDirector({ vibrate: false, apiKey: process.env.EXPO_PUBLIC_MAPBOX_KEY as string })
+  const { director } = useDirector({ apiKey: process.env.EXPO_PUBLIC_MAPBOX_KEY as string })
   const { currentLocation, error } = useWatchLocation({ shouldSimulate, director })
 
   // useEffect(() => {
@@ -145,7 +146,7 @@ export default function Map() {
           <Button title="cancel" onPress={() => setDestination(undefined)} />
         )}
         {isLoading && <ActivityIndicator size="large" />}
-        {!destination && <Toggle value={shouldSimulate} setValue={setShouldSimulate} />}
+        {!destination && !isDev() && <Toggle value={shouldSimulate} setValue={setShouldSimulate} />}
         {currentStep && <StepOverlay step={currentStep} />}
       </View>
     </View>
