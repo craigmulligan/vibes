@@ -1,9 +1,11 @@
-import EventEmitter from "events";
+import EventEmitter from "events"
+import TypedEmitter from "typed-emitter"
 import * as turf from "@turf/turf";
 import { Route, Step } from "@mapbox/mapbox-sdk/services/directions";
 import { IRouter } from "../router";
 
 export type Location = [number, number];
+type DirectorRoute = Route<turf.LineString>
 
 type Options = {
   leadDistance?: number;
@@ -11,13 +13,22 @@ type Options = {
   location?: Location;
 };
 
-class Director extends EventEmitter {
+type DirectorEventTypes = {
+  'route': (route: DirectorRoute) => void;
+  'finish': () => void,
+  'step': (step: Step) => void,
+  'deviation': () => void,
+  'error': (error: unknown) => void
+}
+
+
+class Director extends (EventEmitter as new () => TypedEmitter<DirectorEventTypes>) {
   // Current users location
   location: Location;
   destination: Location | null;
   currentStepIndex: number;
   // Route is the full route geojson
-  route?: Route<turf.LineString | turf.MultiLineString>;
+  route?: DirectorRoute;
   // step route is just the locations
   steps: Step[];
   options: {
@@ -54,7 +65,7 @@ class Director extends EventEmitter {
       throw new Error("No route found");
     }
     // todo handle multilinestring
-    this.route = res.routes[0];
+    this.route = res.routes[0] as Route<turf.LineString>;
     const steps = this.route?.legs[0].steps;
     if (!steps) {
       throw new Error("No steps found");
