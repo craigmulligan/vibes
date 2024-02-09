@@ -15,10 +15,12 @@
   },
   "dependencies": {
     "@mapbox/mapbox-sdk": "^0.15.3",
+    "@sentry/react-native": "5.10.0",
     "@turf/turf": "^6.5.0",
     "@types/lodash": "^4.14.202",
     "events": "^3.3.0",
     "expo": "~49.0.15",
+    "expo-dev-client": "~2.4.12",
     "expo-haptics": "~12.4.0",
     "expo-location": "~16.1.0",
     "expo-status-bar": "~1.6.0",
@@ -26,9 +28,7 @@
     "react": "18.2.0",
     "react-native": "0.72.6",
     "react-native-google-places-autocomplete": "^2.5.6",
-    "react-native-maps": "1.7.1",
-    "expo-dev-client": "~2.4.12",
-    "@sentry/react-native": "5.10.0"
+    "react-native-maps": "1.7.1"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
@@ -37,6 +37,7 @@
     "@types/node": "^20.10.4",
     "@types/react": "~18.2.14",
     "tsx": "^4.6.2",
+    "typed-emitter": "^2.1.0",
     "typescript": "^5.3.3"
   },
   "private": true

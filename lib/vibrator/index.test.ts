@@ -1,6 +1,7 @@
 import { mock, describe, test, beforeEach, afterEach } from "node:test";
 import Vibrator from ".";
 import Director from "../director";
+import { Step } from "@mapbox/mapbox-sdk/services/directions";
 import assert from "assert/strict";
 import res from "../director/simple.res.json";
 import { MockRouter } from "../router";
@@ -30,7 +31,7 @@ describe("vibrator", () => {
   });
 
   test("departing", () => {
-    director.emit("step", steps.at(0));
+    director.emit("step", steps.at(0) as Step);
 
     assert.deepEqual(
       vibrate.mock.calls[0].arguments[0],
@@ -39,7 +40,7 @@ describe("vibrator", () => {
   });
 
   test("arriving", () => {
-    director.emit("step", steps.at(-1));
+    director.emit("step", steps.at(-1) as Step);
 
     assert.deepEqual(
       vibrate.mock.calls[0].arguments[0],
@@ -48,7 +49,7 @@ describe("vibrator", () => {
   });
 
   test("turn left", () => {
-    director.emit("step", steps.at(1));
+    director.emit("step", steps.at(1) as Step);
 
     assert.deepEqual(vibrate.mock.calls[0].arguments[0], [
       ...vibrator.vibrationPatterns.turn,
@@ -57,7 +58,7 @@ describe("vibrator", () => {
   });
 
   test("turn right", () => {
-    director.emit("step", steps.at(1));
+    director.emit("step", steps.at(1) as Step);
 
     assert.deepEqual(vibrate.mock.calls[0].arguments[0], [
       ...vibrator.vibrationPatterns.turn,
