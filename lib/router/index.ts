@@ -22,7 +22,7 @@ export default class Router implements IRouter {
 
   async getRoute(start: Location, end: Location) {
     const config = {
-      profile: "cycling" as const,
+      profile: "walking" as const,
       steps: true,
       voiceUnits: "metric" as const,
       geometries: "geojson" as const,

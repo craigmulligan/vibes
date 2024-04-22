@@ -7,7 +7,7 @@ const directionsClient = mbxDirections({
 })
   ; (async () => {
     const config = {
-      profile: 'cycling',
+      profile: 'walking',
       steps: true,
       voiceUnits: 'metric',
       geometries: 'geojson',
@@ -29,7 +29,7 @@ const directionsClient = mbxDirections({
       ],
     }
 
-    const res = await directionsClient
+    await directionsClient
       .getDirections(config)
       .send(config)
       .then(res => {
