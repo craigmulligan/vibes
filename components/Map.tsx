@@ -5,7 +5,7 @@ import {
   Text,
   View,
   ActivityIndicator,
-  Button,
+  TouchableOpacity,
 } from "react-native";
 import { Step } from "@mapbox/mapbox-sdk/services/directions";
 import { Location } from "../lib/director";
@@ -24,6 +24,9 @@ export default function Map() {
   const [currentStep, setCurrentStep] = useState<Step>();
   const [isLoading, setIsLoading] = useState(false);
   const [shouldSimulate, setShouldSimulate] = useState(isDev());
+  const [marker, setMarker] = useState<Location | undefined>(
+    undefined,
+  );
   const [destination, setDestination] = useState<Location | undefined>(
     undefined,
   );
@@ -33,6 +36,7 @@ export default function Map() {
 
   const cancel = useCallback(() => {
     setDestination(undefined)
+    setRoute(undefined)
     setCurrentStep(undefined)
   }, [])
 
@@ -107,6 +111,7 @@ export default function Map() {
     <View style={styles.container}>
       <StatusBar style="auto" />
       <MapView
+        onPress={e => setMarker([e.nativeEvent.coordinate.longitude, e.nativeEvent.coordinate.latitude])}
         provider={PROVIDER_GOOGLE}
         showsUserLocation={true}
         followsUserLocation={true}
@@ -126,6 +131,7 @@ export default function Map() {
             strokeWidth={2}
           />}
         {currentLocation && shouldSimulate && <Marker pinColor="blue" coordinate={{ latitude: currentLocation[1], longitude: currentLocation[0] }} />}
+        {marker && <Marker pinColor="red" coordinate={{ latitude: marker[1], longitude: marker[0] }} />}
         {destination && <Marker coordinate={{ latitude: destination[1], longitude: destination[0] }} />}
       </MapView>
 
@@ -146,8 +152,14 @@ export default function Map() {
         )}
       </View>
       <View style={styles.footer}>
+        {marker && (
+          <TouchableOpacity style={styles.buttonStart} onPress={() => {
+            setDestination(marker)
+            setMarker(undefined)
+          }}><Text>Start</Text></TouchableOpacity>
+        )}
         {destination && (
-          <Button title="cancel" onPress={cancel} />
+          <TouchableOpacity style={styles.buttonCancel} onPress={cancel}><Text>Cancel</Text></TouchableOpacity>
         )}
         {isLoading && <ActivityIndicator size="large" />}
         {!destination && isDev() && <Toggle value={shouldSimulate} setValue={setShouldSimulate} />}
@@ -169,6 +181,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     width: "100%",
     bottom: 0,
+    flex: 1,
   },
   header: {
     position: "absolute",
@@ -185,5 +198,15 @@ const styles = StyleSheet.create({
   map: {
     width: "100%",
     height: '100%'
+  },
+  buttonCancel: {
+    alignItems: 'center',
+    backgroundColor: 'lightsalmon',
+    padding: 30,
+  },
+  buttonStart: {
+    alignItems: 'center',
+    backgroundColor: 'lightblue',
+    padding: 30,
   }
 });
