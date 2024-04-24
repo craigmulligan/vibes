@@ -39,7 +39,7 @@ class Vibrator {
       rightSlight: [wait * 2, 200] as const,
       leftSlight: [wait * 2, 200, wait, 200, wait, 200] as const,
 
-      // We treat slightRight 
+      // We treat slightRight
     } as const;
   }
 

@@ -41,7 +41,7 @@ beforeEach(() => {
 
 describe("routing", () => {
   test("should handle simple route", async () => {
-    await d.updateLocation([-118.506001, 34.022483])
+    await d.updateLocation([-118.506001, 34.022483]);
     await d.navigate([-118.490471, 34.01714]);
 
     const coords = steps.features
@@ -62,7 +62,7 @@ describe("routing", () => {
   });
 
   test("should handle route with skipped locations", async () => {
-    await d.updateLocation([-118.506001, 34.022483])
+    await d.updateLocation([-118.506001, 34.022483]);
     await d.navigate([-118.490471, 34.01714]);
     // this test cases has multipe locations per line segment and
     // in some cases doesn't have a location within lead distance of a manuever
@@ -96,7 +96,7 @@ describe("routing", () => {
   });
 
   test("should handle re-routing", async () => {
-    await d.updateLocation([-118.506001, 34.022483])
+    await d.updateLocation([-118.506001, 34.022483]);
     await d.navigate([-118.490471, 34.01714]);
     // go two location points.
     // then go off course

@@ -8,11 +8,10 @@ It's described in [the vibrator module](lib/vibrator/index.ts). But the mapping 
 
 If we represent `_` as a long vibration and `.` as a short one. And ` ` as a pause.
 
+- Right turn: `_ .`
+- Straight ahead: `_ . .`
+- Left turn: `_ . . .`
 
-* Right turn: `_ .`
-* Straight ahead: `_ . .`
-* Left turn: `_ . . .`
-
-* Arrive: `__`
-* Depart: `__`
-* Deviation: `_ _ _ _ _`
+- Arrive: `__`
+- Depart: `__`
+- Deviation: `_ _ _ _ _`

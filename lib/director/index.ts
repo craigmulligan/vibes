@@ -1,11 +1,11 @@
-import EventEmitter from "events"
-import TypedEmitter from "typed-emitter"
+import EventEmitter from "events";
+import TypedEmitter from "typed-emitter";
 import * as turf from "@turf/turf";
 import { Route, Step } from "@mapbox/mapbox-sdk/services/directions";
 import { IRouter } from "../router";
 
 export type Location = [number, number];
-type DirectorRoute = Route<turf.LineString>
+type DirectorRoute = Route<turf.LineString>;
 
 type Options = {
   leadDistance?: number;
@@ -14,13 +14,14 @@ type Options = {
 };
 
 type DirectorEventTypes = {
-  'route': (route: DirectorRoute) => void;
-  'finish': () => void,
-  'step': (step: Step) => void,
-  'deviation': () => void,
-  'error': (error: unknown) => void
-}
-
+  route: (route: DirectorRoute) => void;
+  finish: () => void;
+  step: (step: Step) => void;
+  deviation: () => void;
+  error: (error: unknown) => void;
+  navigate: () => void;
+  cancel: () => void;
+};
 
 class Director extends (EventEmitter as new () => TypedEmitter<DirectorEventTypes>) {
   // Current users location
@@ -59,6 +60,7 @@ class Director extends (EventEmitter as new () => TypedEmitter<DirectorEventType
   }
 
   async navigate(destination: Location) {
+    this.emit("navigate");
     this.destination = destination;
     const res = await this.router.getRoute(this.location, destination);
     if (res.routes.length === 0) {
@@ -141,6 +143,11 @@ class Director extends (EventEmitter as new () => TypedEmitter<DirectorEventType
     }
 
     return false;
+  }
+
+  cancel() {
+    this.destination = null;
+    this.emit("cancel");
   }
 
   notify(step: Step) {
