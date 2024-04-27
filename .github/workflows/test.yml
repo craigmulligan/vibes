@@ -27,4 +27,5 @@ jobs:
       - run: npm ci
       - run: npm run build --if-present
       - run: npm run types:check
+      - run: npm run fmt:check
       - run: npm test

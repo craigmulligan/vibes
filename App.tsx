@@ -15,7 +15,7 @@ const router = new Router(process.env.EXPO_PUBLIC_MAPBOX_KEY as string);
 const director = new Director(router);
 const locationTask = new LocationTask(director, isDev());
 locationTask.boot();
-new Vibrator(director, isDev() ? () => { } : Vibration.vibrate);
+new Vibrator(director, isDev() ? () => {} : Vibration.vibrate);
 
 function App() {
   return (
