@@ -1,10 +1,7 @@
 {
   "type": "Feature",
   "geometry": {
-    "coordinates": [
-      -118.498585,
-      34.019088
-    ],
+    "coordinates": [-118.498585, 34.019088],
     "type": "Point"
   },
   "properties": {
@@ -54,12 +51,8 @@
       ]
     },
     "maki": "marker",
-    "poi_category": [
-      "office"
-    ],
-    "poi_category_ids": [
-      "office"
-    ],
+    "poi_category": ["office"],
+    "poi_category_ids": ["office"],
     "external_ids": {
       "foursquare": "6d6d0409a5a34b4cb6ba5fa0"
     },

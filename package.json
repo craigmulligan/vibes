@@ -10,6 +10,7 @@
     "test": "node --experimental-modules --import tsx --test ./lib/**/*.test.ts",
     "test:debug": "node --inspect-brk --experimental-modules --import tsx --test ./lib/**/*.test.ts",
     "types:check": "tsc --noEmit",
+    "fmt:check": "prettier --check ./",
     "eas:update": "eas update && npx sentry-expo-upload-sourcemaps dist",
     "eas:build": "eas build --profile preview platform --android"
   },
@@ -20,13 +21,14 @@
     "@types/lodash": "^4.14.202",
     "events": "^3.3.0",
     "expo": "~49.0.15",
-    "expo-dev-client": "~2.4.12",
+    "expo-dev-client": "~2.4.13",
     "expo-haptics": "~12.4.0",
     "expo-location": "~16.1.0",
     "expo-status-bar": "~1.6.0",
+    "expo-task-manager": "~11.3.0",
     "expo-updates": "~0.18.19",
     "react": "18.2.0",
-    "react-native": "0.72.6",
+    "react-native": "0.72.10",
     "react-native-google-places-autocomplete": "^2.5.6",
     "react-native-maps": "1.7.1"
   },
@@ -36,6 +38,7 @@
     "@types/mapbox__mapbox-sdk": "^0.13.10",
     "@types/node": "^20.10.4",
     "@types/react": "~18.2.14",
+    "prettier": "^3.2.5",
     "tsx": "^4.6.2",
     "typed-emitter": "^2.1.0",
     "typescript": "^5.3.3"
