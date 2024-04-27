@@ -151,7 +151,7 @@ export default function Map({
     <View style={styles.container}>
       <StatusBar style="auto" />
       <MapView
-        onPress={(e) =>
+        onLongPress={(e) =>
           setMarker([
             e.nativeEvent.coordinate.longitude,
             e.nativeEvent.coordinate.latitude,
